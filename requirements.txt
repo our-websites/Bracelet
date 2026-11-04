@@ -2,4 +2,3 @@ yapper.py
 flask
 cloudflare
 dotenv
-thread
