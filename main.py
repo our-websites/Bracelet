@@ -12,9 +12,14 @@ sys.path.insert(0, str(MAIN_DIR))
 VARS = {}
 
 envs = {
+    "YAPPER_BOT_TOKEN": True,
     "BASE_URL": True,
-    "API_BASE_URL": False,
-    "SERVER_PORT": True
+    "API_BASE_URL": True,
+    "INVITE_URL": True,
+    "SERVER_PORT": True,
+    "KV": False,
+    "CLOUDFLARE_API_TOKEN": False, # Required if you enable KV support.
+    "CLOUDFLARE_KV_NAMESPACE": False # Required if you enable KV support.
 }
 
 missing_vars = []
@@ -39,6 +44,7 @@ BASE_URL = VARS["BASE_URL"].strip()
 BASE_URL_STRIPPED = BASE_URL.replace("http://", "")
 BASE_URL_STRIPPED = BASE_URL_STRIPPED.replace("https://", "")
 API_BASE_URL = VARS["API_BASE_URL"]
+INVITE_URL = VARS["INVITE_URL"]
 PORT = VARS["SERVER_PORT"]
 
 app = Flask(__name__, subdomain_matching=True, template_folder=MAIN_DIR / "templates", static_folder=MAIN_DIR / "static")
@@ -52,9 +58,10 @@ def test(interaction):
     interaction.reply("Test Worked!")
 
 @app.route("/", methods=["GET"])
-@app.route("/", methods=["GET", "HEAD"], subdomain="api")
+@app.route("/", methods=["GET"], subdomain="api")
 def index():
-    return jsonify({"data": "COMING SOON", "success": True})
+    API_INFO = {"info": "Bracelet provides Yapin presences as an API. Find out more here: https://github.com/our-websites/bracelet","yapin_invite": VARS["INVITE_URL"],"monitored_user_count": usercount()}
+    return jsonify({"data": API_INFO, "success": True})
 
 @app.route("/<file>", methods=["GET"])
 def serve_static(file):
@@ -64,5 +71,4 @@ def serve_static(file):
         return "File Not Found", 404
 
 app.run(host="0.0.0.0", port=PORT, debug=False)
-
 bot.run()
