@@ -27,20 +27,23 @@ envs = {
 missing_vars = []
 for var in envs:
     var_data = str(os.environ.get(var, ""))
-    print(var_data)
+    #print(var_data)
     if not var_data:
         missing_vars.append(var)
     else:
         VARS[var] = var_data.strip()
-        print(f"[Bracelet] Sucessfully Added {var}!")
+        print(f"[Bracelet] ADDED {var} TO THE ENVIRONMENT!")
 
 if len(missing_vars) >= 1:
     for variable in missing_vars:
+        #print(missing_vars)
         if envs[variable] == True:
             print(f"[Bracelet] MISSING VARIABLE: {variable} IN .env")
         else:
             print(f"[Bracelet] MISSING OPTIONAL VARIABLE: {variable} IN .env")
-    sys.exit(1)
+        #print(missing_vars.index(variable))
+    if len(missing_vars) >= 1 and envs[variable] == True:
+        sys.exit(1)
 
 BASE_URL = VARS["BASE_URL"].strip()
 BASE_URL_STRIPPED = BASE_URL.replace("http://", "")
