@@ -6,7 +6,7 @@ from flask import Flask, render_template, jsonify, request, send_file, make_resp
 
 load_dotenv()
 
-global TOTAL_USERS
+global API_INFO
 
 MAIN_DIR = Path(__file__).parent
 sys.path.insert(0, str(MAIN_DIR))
@@ -58,9 +58,19 @@ app.config["SERVER_NAME"] = BASE_URL_STRIPPED
 
 bot = yapper.Bot()
 
+@bot.on("ready")
+def on_start():
+    API_INFO = {}
+    API_INFO["Members"] = SyncMembers()
+
 @bot.on("member_join")
 def Member_Join():
     API_INFO["Members"] = SyncMembers()
+
+@bot.on("test")
+def test_event():
+    print(f"Recieved Test Event! There Are Currently {API_INFO['Members']} Users Being Monitored.")
+
 @bot.on("member_left")
 def Member_Left():
     API_INFO["Members"] = SyncMembers()
