@@ -11,6 +11,8 @@ global API_INFO
 MAIN_DIR = Path(__file__).parent
 sys.path.insert(0, str(MAIN_DIR))
 
+API_INFO = {}
+
 VARS = {}
 
 envs = {
@@ -60,7 +62,6 @@ bot = yapper.Bot()
 
 @bot.on("ready")
 def on_start():
-    API_INFO = {}
     API_INFO["Members"] = SyncMembers()
 
 @bot.on("member_join")
