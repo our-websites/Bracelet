@@ -1,5 +1,6 @@
 import yapper, os, sys
 from pathlib import Path
+from threading import Thread
 from dotenv import load_dotenv
 #from cloudflare import Cloudflare
 from flask import Flask, render_template, jsonify, request, send_file, make_response, Response
@@ -11,7 +12,7 @@ global API_INFO
 MAIN_DIR = Path(__file__).parent
 sys.path.insert(0, str(MAIN_DIR))
 
-API_INFO = {}
+API_INFO = {"Members": 0, "Servers": 0}
 
 VARS = {}
 
@@ -34,7 +35,7 @@ for var in envs:
         missing_vars.append(var)
     else:
         VARS[var] = var_data.strip()
-        print(f"[Bracelet] ADDED {var} TO THE ENVIRONMENT!")
+        print(f"[Bracelet] LOADED {var} INTO THE ENVIRONMENT!")
 
 if len(missing_vars) >= 1:
     for variable in missing_vars:
@@ -61,7 +62,8 @@ app.config["SERVER_NAME"] = BASE_URL_STRIPPED
 bot = yapper.Bot()
 
 @bot.on("ready")
-def on_start():
+def on_bot_start(bot_data):
+    #print(bot_data)
     API_INFO["Members"] = SyncMembers()
 
 @bot.on("member_join")
@@ -70,7 +72,7 @@ def Member_Join():
 
 @bot.on("test")
 def test_event():
-    print(f"Recieved Test Event! There Are Currently {API_INFO['Members']} Users Being Monitored.")
+    print(f"[Bracelet] Recieved Test Event! There Are Currently {API_INFO['Members']} Users Being Monitored.")
 
 @bot.on("member_left")
 def Member_Left():
@@ -81,17 +83,21 @@ def SyncServers():
 
 def SyncMembers():
     try:
-        SERVERS = SyncServers()
+        API_INFO["Servers"] = SyncServers()
     except Exception:
         return "Error Fetching Servers."
-    if SERVERS and SERVERS >= 1:
+    if len(API_INFO["Servers"]) >= 1:
         count = 0
-        for srv in SERVERS:
-            count += bot.member_counts(srv["server_id"])
+        for srv in API_INFO["Servers"]:
+            #print(srv)
+            srv_data = bot.member_counts(srv.get("id"))
+            print(f"[Bracelet] {srv.get('name', 'Unknown Server')}: {srv_data.get('member_count', 0)} Members Monitored.")
+            count += srv_data.get("member_count", 0)
+        print(f"[Bracelet] Total Monitored User Count: {count}")
         return count
     else:
         return "No Servers Found? Maybe Yapin' Is Down Or You Configured Something Wrong, Or You Haven't Added Your Bot To A Server?"
-    return "Failed To Sync Memebers."
+    return "Failed To Sync Members."
 
 @bot.command("test", "Test Command Until We Actually Code This")
 def test(interaction):
@@ -110,5 +116,9 @@ def serve_static(file):
     except Exception:
         return "File Not Found", 404
 
-app.run(host="0.0.0.0", port=PORT, debug=False)
-bot.run()
+def start_bot():
+    bot.run()
+
+Thread(target=start_bot, daemon=True).start()
+
+app.run(host="0.0.0.0", port=PORT, debug=True)
