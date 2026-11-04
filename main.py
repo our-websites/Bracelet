@@ -6,6 +6,8 @@ from flask import Flask, render_template, jsonify, request, send_file, make_resp
 
 load_dotenv()
 
+global TOTAL_USERS
+
 MAIN_DIR = Path(__file__).parent
 sys.path.insert(0, str(MAIN_DIR))
 
@@ -53,6 +55,30 @@ app.config["SERVER_NAME"] = BASE_URL_STRIPPED
 
 bot = yapper.Bot()
 
+@bot.on("member_join")
+def Member_Join():
+    API_INFO["Members"] = SyncMembers()
+@bot.on("member_left")
+def Member_Left():
+    API_INFO["Members"] = SyncMembers()
+
+def SyncServers():
+    return bot.servers()
+
+def SyncMembers():
+    try:
+        SERVERS = SyncServers()
+    except Exception:
+        return "Error Fetching Servers."
+    if SERVERS and SERVERS >= 1:
+        count = 0
+        for srv in SERVERS:
+            count += bot.member_counts(srv["server_id"])
+        return count
+    else:
+        return "No Servers Found? Maybe Yapin' Is Down Or You Configured Something Wrong, Or You Haven't Added Your Bot To A Server?"
+    return "Failed To Sync Memebers."
+
 @bot.command("test", "Test Command Until We Actually Code This")
 def test(interaction):
     interaction.reply("Test Worked!")
@@ -60,8 +86,8 @@ def test(interaction):
 @app.route("/", methods=["GET"])
 @app.route("/", methods=["GET"], subdomain="api")
 def index():
-    API_INFO = {"info": "Bracelet provides Yapin presences as an API. Find out more here: https://github.com/our-websites/bracelet","yapin_invite": VARS["INVITE_URL"],"monitored_user_count": usercount()}
-    return jsonify({"data": API_INFO, "success": True})
+    API_RESPONSE = {"info": "Bracelet provides Yapin presences as an API. Find out more here: https://github.com/our-websites/bracelet","yapin_invite": VARS["INVITE_URL"],"monitored_user_count": API_INFO["Members"]}
+    return jsonify({"data": API_RESPONSE, "success": True})
 
 @app.route("/<file>", methods=["GET"])
 def serve_static(file):
