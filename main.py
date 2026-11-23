@@ -4,7 +4,7 @@ from threading import Thread
 from dotenv import load_dotenv
 from yapper import telemetry
 #from cloudflare import Cloudflare
-from flask import Flask, render_template, jsonify, request, send_file, make_response, Response
+from flask import Flask, render_template, jsonify, request, send_file, make_response, Response, redirect
 
 load_dotenv()
 
@@ -25,7 +25,8 @@ envs = {
     "SERVER_PORT": True,
     "KV": False,
     "CLOUDFLARE_API_TOKEN": False, # Required if you enable KV support.
-    "CLOUDFLARE_KV_NAMESPACE": False # Required if you enable KV support.
+    "CLOUDFLARE_KV_NAMESPACE": False, # Required if you enable KV support.
+    "TELEMETRY_KEY": False
 }
 
 missing_vars = []
@@ -61,9 +62,8 @@ app = Flask(__name__, subdomain_matching=True, template_folder=MAIN_DIR / "templ
 app.config["SERVER_NAME"] = BASE_URL_STRIPPED
 
 bot = yapper.Bot()
-
 #telemetry.preview(bot)
-telemetry.enable(bot)
+telemetry.enable(bot, interval=300)
 
 @bot.on("ready")
 def on_bot_start(bot_data):
@@ -78,9 +78,17 @@ def Member_Join():
 def test_event():
     print(f"[Bracelet] Recieved Test Event! There Are Currently {API_INFO['Members']} Users Being Monitored.")
 
-@bot.on("member_left")
+@bot.on("member_leave")
 def Member_Left():
     API_INFO["Members"] = SyncMembers()
+
+def bracelet_data(UserID=None, Username=None):
+    print(UserID, Username)
+    if not (UserID or Username): return jsonify({"data": 'No UserID or Username Provided.', "success": False})
+    if not UserID:
+        return jsonify({"data": f'Not Implemented Yet ({Username})', "success": False})
+    else:
+        return jsonify({"data": f'Not Implemented Yet ({UserID})', "success": False})
 
 def SyncServers():
     return bot.servers()
@@ -94,7 +102,7 @@ def SyncMembers():
         count = 0
         for srv in API_INFO["Servers"]:
             #print(srv)
-            srv_data = bot.member_counts(srv.get("id"))
+            srv_data = bot.member_counts(srv.get('id'))
             print(f"[Bracelet] {srv.get('name', 'Unknown Server')}: {srv_data.get('member_count', 0)} Members Monitored.")
             count += srv_data.get("member_count", 0)
         print(f"[Bracelet] Total Monitored User Count: {count}")
@@ -107,11 +115,24 @@ def SyncMembers():
 def test(interaction):
     interaction.reply("Test Worked!")
 
+@app.route("/", methods=["GET"], subdomain="<subdomain>")
+@app.errorhandler(404)
+def not_found(subdomain):
+    return redirect("https://bracelet.oriaxen.com")
+
 @app.route("/", methods=["GET"])
 @app.route("/", methods=["GET"], subdomain="api")
 def index():
     API_RESPONSE = {"info": "Bracelet provides Yapin presences as an API. Find out more here: https://github.com/our-websites/bracelet","yapin_invite": VARS["INVITE_URL"],"monitored_user_count": API_INFO["Members"]}
     return jsonify({"data": API_RESPONSE, "success": True})
+
+@app.route("/api/v1/<UserID>", methods=["GET"])
+@app.route("/v1/<UserID>", methods=["GET"], subdomain="api")
+def bracelet_api(UserID):
+    print(bot.me)
+    #info = make_response(bracelet_data(UserID=UserID))
+    info = bot.user(bot.me['bot']['owner_id'])
+    return info
 
 @app.route("/<file>", methods=["GET"])
 def serve_static(file):
