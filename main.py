@@ -2,6 +2,7 @@ import yapper, os, sys
 from pathlib import Path
 from threading import Thread
 from dotenv import load_dotenv
+from yapper import telemetry
 #from cloudflare import Cloudflare
 from flask import Flask, render_template, jsonify, request, send_file, make_response, Response
 
@@ -60,6 +61,9 @@ app = Flask(__name__, subdomain_matching=True, template_folder=MAIN_DIR / "templ
 app.config["SERVER_NAME"] = BASE_URL_STRIPPED
 
 bot = yapper.Bot()
+
+#telemetry.preview(bot)
+telemetry.enable(bot)
 
 @bot.on("ready")
 def on_bot_start(bot_data):
