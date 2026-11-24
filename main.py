@@ -112,8 +112,8 @@ def format_data(Data: BraceletData):
         if badge == ('bot' or 'verified_bot'):
             print(f"{formatted_data['data']['user']['username']} Is A Bot", badge)
             formatted_data['data']['user']['object'] = 'bot'
-    formatted_data['data']['user']['avatar_path'] = f"https://files.yapper.website/avatars/{formatted_data['data']['user']['avatar_path']"
-    formatted_data['data']['user']['banner_path'] = f"https://files.yapper.website/banners/{formatted_data['data']['user']['banner_path']"
+    formatted_data['data']['user']['avatar_path'] = f"https://files.yapper.website/avatars/{formatted_data['data']['user']['avatar_path']}"
+    formatted_data['data']['user']['banner_path'] = f"https://files.yapper.website/banners/{formatted_data['data']['user']['banner_path']}"
     return jsonify(formatted_data)
 
 def SyncServers():
