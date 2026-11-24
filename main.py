@@ -109,7 +109,8 @@ def bracelet_data(UserID=None, Username=None):
 def format_data(Data: BraceletData):
     formatted_data = {"data": Data, "success": True}
     for badge in formatted_data['data']['user']['badges']:
-        if ('bot' or'verified_bot') in badge:
+        if badge == ('bot' or 'verified_bot'):
+            print(f"{formatted_data['data']['user']['username']} Is A Bot", badge)
             formatted_data['data']['user']['object'] = 'bot'
     return jsonify(formatted_data)
 
