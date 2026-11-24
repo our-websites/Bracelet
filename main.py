@@ -78,6 +78,7 @@ telemetry.enable(bot, interval=300)
 @bot.on("ready")
 def on_bot_start(bot_data):
     #print(bot_data)
+    bot.is_ready = True
     API_INFO["Members"] = SyncMembers()
 
 @bot.on("member_join")
@@ -120,7 +121,7 @@ def SyncMembers():
         API_INFO["Servers"] = SyncServers()
     except Exception:
         return "Error Fetching Servers."
-    if len(API_INFO["Servers"]) >= 1:
+    if len(API_INFO["Servers"]) >= 1 and bot.is_ready == True:
         count = 0
         for srv in API_INFO["Servers"]:
             #print(srv)
