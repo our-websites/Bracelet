@@ -23,7 +23,7 @@ global API_INFO
 MAIN_DIR = Path(__file__).parent
 sys.path.insert(0, str(MAIN_DIR))
 
-API_INFO = {"Members": 0, "Servers": 0}
+API_INFO = {"Members": 0, "Servers": {}}
 
 VARS = {}
 
