@@ -8,6 +8,16 @@ from flask import Flask, render_template, jsonify, request, send_file, make_resp
 
 load_dotenv()
 
+class BraceletData:
+    status = "Offline",
+    user = {},
+    kv = {}
+
+    def __init__(self, status, user, kv):
+        self.status = status
+        self.user = user
+        self.kv = kv
+
 global API_INFO
 
 MAIN_DIR = Path(__file__).parent
@@ -84,11 +94,19 @@ def Member_Left():
 
 def bracelet_data(UserID=None, Username=None):
     print(UserID, Username)
-    if not (UserID or Username): return jsonify({"data": 'No UserID or Username Provided.', "success": False})
-    if not UserID:
-        return jsonify({"data": f'Not Implemented Yet ({Username})', "success": False})
+    if not (UserID or Username): info = jsonify({"data": 'No UserID or Username Provided.', "success": False})
+    if Username:
+        info = jsonify({"data": f'Not Implemented Yet ({Username})', "success": False})
+    elif UserID:
+        info = format_data({"status": "Offline" ,"user": bot.user(UserID), "kv": {}})
+        #return jsonify({"data": f'Not Implemented Yet ({UserID})', "success": False})
     else:
-        return jsonify({"data": f'Not Implemented Yet ({UserID})', "success": False})
+        info = jsonify({"data": "No Data Found Or Provided.", "success": False})
+    return make_response(info)
+
+def format_data(Data: BraceletData):
+    formatted_data = {"data": Data, "success": True}
+    return jsonify(formatted_data)
 
 def SyncServers():
     return bot.servers()
@@ -129,9 +147,16 @@ def index():
 @app.route("/api/v1/<UserID>", methods=["GET"])
 @app.route("/v1/<UserID>", methods=["GET"], subdomain="api")
 def bracelet_api(UserID):
-    print(bot.me)
-    #info = make_response(bracelet_data(UserID=UserID))
-    info = bot.user(bot.me['bot']['owner_id'])
+    #print(bot.me)
+    info = "An Error Occurred if you see this"
+    for server in API_INFO['Servers']:
+        ServerMembers = bot.members(server.get('id'))
+        for member in ServerMembers:
+            #print(member['id'])
+            if str(member['id']) == str(UserID):
+                info = bracelet_data(UserID=UserID)
+            else:
+                info = jsonify({"data": "User is not monitored by Bracelet.", "success": False})
     return info
 
 @app.route("/<file>", methods=["GET"])
