@@ -86,7 +86,8 @@ def Member_Join():
 
 @bot.on("test")
 def test_event():
-    print(f"[Bracelet] Recieved Test Event! There Are Currently {API_INFO['Members']} Users Being Monitored.")
+    API_INFO["Members"] = SyncMembers()
+    print(f"[Bracelet] Recieved Test Event! There Are Currently {API_INFO['Members']} User(s) Being Monitored.")
 
 @bot.on("member_leave")
 def Member_Left():
@@ -106,6 +107,9 @@ def bracelet_data(UserID=None, Username=None):
 
 def format_data(Data: BraceletData):
     formatted_data = {"data": Data, "success": True}
+    for badge in formatted_data['data']['user']['badges']:
+        if ('bot' or'verified_bot') in badge:
+            formatted_data['data']['user']['object'] = 'bot'
     return jsonify(formatted_data)
 
 def SyncServers():
@@ -121,7 +125,7 @@ def SyncMembers():
         for srv in API_INFO["Servers"]:
             #print(srv)
             srv_data = bot.member_counts(srv.get('id'))
-            print(f"[Bracelet] {srv.get('name', 'Unknown Server')}: {srv_data.get('member_count', 0)} Members Monitored.")
+            print(f"[Bracelet] {srv.get('name', 'Unknown Server')}: {srv_data.get('member_count', 0)} User(s) Monitored.")
             count += srv_data.get("member_count", 0)
         print(f"[Bracelet] Total Monitored User Count: {count}")
         return count
