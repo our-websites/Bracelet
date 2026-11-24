@@ -156,7 +156,10 @@ def bracelet_api(UserID):
             if str(member['id']) == str(UserID):
                 info = bracelet_data(UserID=UserID)
             else:
-                info = jsonify({"data": "User is not monitored by Bracelet.", "success": False})
+                if info == "An Error Occurred if you see this":
+                    info = jsonify({"data": "User is not monitored by Bracelet.", "success": False})
+                else:
+                    pass
     return info
 
 @app.route("/<file>", methods=["GET"])
