@@ -1,4 +1,4 @@
-import yapper, os, sys
+import yapper, os, sys, time
 from pathlib import Path
 from threading import Thread
 from dotenv import load_dotenv
@@ -28,11 +28,12 @@ VARS = {}
 
 envs = {
     "YAPPER_BOT_TOKEN": True,
+    "APPROVED_SERVERS": True, # These are comma separated servers that Bracelet is allowed to monitor users on.
     "BASE_URL": True,
     "API_BASE_URL": True,
     "INVITE_URL": True,
     "SERVER_PORT": True,
-    "KV": False,
+    "KV": True,
     "CLOUDFLARE_API_TOKEN": False, # Required if you enable KV support.
     "CLOUDFLARE_KV_NAMESPACE": False, # Required if you enable KV support.
     "TELEMETRY_KEY": False
@@ -41,7 +42,6 @@ envs = {
 missing_vars = []
 for var in envs:
     var_data = str(os.environ.get(var, ""))
-    #print(var_data)
     if not var_data:
         missing_vars.append(var)
     else:
@@ -50,12 +50,10 @@ for var in envs:
 
 if len(missing_vars) >= 1:
     for variable in missing_vars:
-        #print(missing_vars)
         if envs[variable] == True:
             print(f"[Bracelet] MISSING VARIABLE: {variable} IN .env")
         else:
             print(f"[Bracelet] MISSING OPTIONAL VARIABLE: {variable} IN .env")
-        #print(missing_vars.index(variable))
     if len(missing_vars) >= 1 and envs[variable] == True:
         sys.exit(1)
 
@@ -65,11 +63,12 @@ BASE_URL_STRIPPED = BASE_URL_STRIPPED.replace("https://", "")
 API_BASE_URL = VARS["API_BASE_URL"]
 INVITE_URL = VARS["INVITE_URL"]
 PORT = VARS["SERVER_PORT"]
-KV = VARS["KV"] or False
+APPROVED_SERVERS = {str(id) for id in VARS["APPROVED_SERVERS"].split(',')}
+KV = VARS["KV"]
 
 global kv_database
 
-if KV == True:
+if KV == (True or "true"):
     from cloudflare import Cloudflare
     kv_client = Cloudflare(api_token=os.environ.get("CLOUDFLARE_API_TOKEN")) # No clue if we'll use D1 or KV from Cloudflare.
 
@@ -78,12 +77,11 @@ app = Flask(__name__, subdomain_matching=True, template_folder=MAIN_DIR / "templ
 app.config["SERVER_NAME"] = BASE_URL_STRIPPED
 
 bot = yapper.Bot()
-#telemetry.preview(bot)
+#print(telemetry.preview(bot))
 telemetry.enable(bot, interval=300)
 
 @bot.on("ready")
 def on_bot_start(bot_data):
-    #print(bot_data)
     bot.is_ready = True
     API_INFO["Members"] = SyncMembers()
 
@@ -132,24 +130,37 @@ def pretty_format(data: BraceletData):
     return formatted_data
 
 def SyncServers():
-    return bot.servers()
+    servers = []
+    Servers = []
+    for server in bot.servers():
+        for APPROVED_SERVER in APPROVED_SERVERS:
+            if APPROVED_SERVER == str(server['id']):
+                servers.append(server)
+            else:
+                Servers.append(server)
+    for srv in Servers:
+        for asrv in servers:
+            if str(asrv['id']) == str(srv['id']):
+                Servers.pop(Servers.index(srv))
+    print(f"There are {len(Servers)} Server(s) that aren't approved.")
+    return servers
 
 def SyncMembers():
     try:
         API_INFO["Servers"] = SyncServers()
-    except Exception:
-        return "Error Fetching Servers."
-    if len(API_INFO["Servers"]) >= 1 and bot.is_ready == True:
+    except Exception as e:
+        return f"Error Fetching Servers: {e}"
+    if bot.is_ready == True:
         count = 0
         for srv in API_INFO["Servers"]:
-            #print(srv)
             srv_data = bot.member_counts(srv.get('id'))
             print(f"[Bracelet] {srv.get('name', 'Unknown Server')}: {srv_data.get('member_count', 0)} User(s) Monitored.")
             count += srv_data.get("member_count", 0)
         print(f"[Bracelet] Total Monitored User Count: {count}")
         return count
     else:
-        return "No Servers Found? Maybe Yapin' Is Down Or You Configured Something Wrong, Or You Haven't Added Your Bot To A Server?"
+        print("[Bracelet] No Servers Found? Maybe Yapin' Is Down Or You Configured Something Wrong, Or You Haven't Set An Approved Server?")
+        return "No Servers Found? Maybe Yapin' Is Down Or You Configured Something Wrong, Or You Haven't Set An Approved Server?"
     return "Failed To Sync Members."
 
 @bot.command("test", "Test Command Until We Actually Code This")
@@ -159,8 +170,8 @@ def test(msg):
 @bot.command("bracelet", "Get The Bracelet Info Of A User", options=[{"name": "user", "type": "user", "value": "self", "required": True}])
 def bracelet_command(msg):
     print(msg.options)
-    #if msg.options['user'] == "self":
-        #msg.options['user'] = msg.author_id
+    if msg.options['user'] == "self":
+        msg.options['user'] = msg.author_id
     data = bracelet_data(UserID=msg.options['user'])
     data = data['data'] # We don't need to pass in the WHOLE JSON table, I will eventually make this an embed dw. (If I ever learn how to make a nice looking embed.) Feel free to open a PR adding a embed.
     msg.reply(data)
@@ -188,7 +199,10 @@ def not_found(subdomain):
 
 @app.route("/", methods=["GET", "HEAD"])
 def index():
-    return redirect(API_BASE_URL) # Will be making a landing page at some point, for now it's just a redirect!
+    if API_BASE_URL == BASE_URL:
+        return api_index()
+    else:
+        return redirect(API_BASE_URL) # Will be making a landing page at some point, for now it's just a redirect!
 
 @app.route("/", methods=["GET", "HEAD"], subdomain="api")
 def api_index():
@@ -201,18 +215,19 @@ def api_index():
 @app.route("/v1/users/<UserID>", methods=["GET"], subdomain="api")
 def bracelet_api(UserID):
     #print(bot.me)
-    data = {"data": "An Error Occurred If You See This", "success": False}
-    _data = data
+    data = {"data": "An Error Occurred If You See This, or Bracelet isn't configured properly. Consider checking that you have a approved server set in your environment/.env!", "success": False}
+    MemberData = None
     for server in API_INFO['Servers']:
         ServerMembers = bot.members(server.get('id'))
         for member in ServerMembers:
-            #print(member['id'])
             if str(member['id']) == str(UserID):
-                data = bracelet_data(UserID=UserID)
-            else:
-                pass
-    if data == _data:
-         data = {"data": "User is not monitored by Bracelet", "success": False}
+                MemberData = bracelet_data(UserID=UserID)
+    if not MemberData and len(API_INFO['Servers']) >= 1:
+        data = {"data": "User is not monitored by Bracelet", "success": False}
+    elif MemberData and len(API_INFO['Servers']) >= 1:
+        data = MemberData
+    else:
+        pass
     return jsonify(data)
 
 @app.route("/<file>", methods=["GET"])
@@ -225,5 +240,15 @@ def serve_static(file):
 def start_bot():
     bot.run()
 
+def syncer():
+    try:
+        while True:
+            time.sleep(60) # Sync every minute.
+            API_INFO["Members"] = SyncMembers()
+            #print(f"[Bracelet] {len(API_INFO['Servers'])} Server(s) and {API_INFO['Members']} Member(s) Synced Successfully!")
+    except KeyboardInterrupt:
+        pass
+
+Thread(target=syncer, daemon=True).start()
 Thread(target=start_bot, daemon=True).start()
 app.run(host="0.0.0.0", port=PORT, debug=False)
