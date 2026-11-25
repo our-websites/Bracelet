@@ -96,15 +96,15 @@ def Member_Left():
 
 def bracelet_data(UserID=None, Username=None):
     print(UserID, Username)
-    if not (UserID or Username): info = jsonify({"data": 'No UserID or Username Provided.', "success": False})
+    if not (UserID or Username): info = {"data": 'No UserID or Username Provided.', "success": False}
     if Username:
-        info = jsonify({"data": f'Not Implemented Yet ({Username})', "success": False})
+        info = {"data": f'Not Implemented Yet ({Username})', "success": False}
     elif UserID:
         info = format_data({"status": "Offline" ,"user": bot.user(UserID), "kv": {}})
         #return jsonify({"data": f'Not Implemented Yet ({UserID})', "success": False})
     else:
-        info = jsonify({"data": "No Data Found Or Provided.", "success": False})
-    return make_response(info)
+        info = {"data": "No Data Found Or Provided.", "success": False}
+    return info
 
 def format_data(Data: BraceletData):
     formatted_data = {"data": Data, "success": True}
@@ -112,9 +112,11 @@ def format_data(Data: BraceletData):
         if badge == ('bot' or 'verified_bot'):
             print(f"{formatted_data['data']['user']['username']} Is A Bot", badge)
             formatted_data['data']['user']['object'] = 'bot'
-    formatted_data['data']['user']['avatar_path'] = f"https://files.yapper.website/avatars/{formatted_data['data']['user']['avatar_path']}"
-    formatted_data['data']['user']['banner_path'] = f"https://files.yapper.website/banners/{formatted_data['data']['user']['banner_path']}"
-    return jsonify(formatted_data)
+    formatted_data['data']['user']['avatar_url'] = f"https://files.yapper.website/avatars/{formatted_data['data']['user']['avatar_path']}"
+    formatted_data['data']['user']['banner_url'] = f"https://files.yapper.website/banners/{formatted_data['data']['user']['banner_path']}"
+    del formatted_data['data']['user']['avatar_path']
+    del formatted_data['data']['user']['banner_path']
+    return formatted_data
 
 def SyncServers():
     return bot.servers()
@@ -156,19 +158,19 @@ def index():
 @app.route("/v1/<UserID>", methods=["GET"], subdomain="api")
 def bracelet_api(UserID):
     #print(bot.me)
-    info = "An Error Occurred if you see this"
+    data = {"data": "An Error Occurred If You See This", "success": False}
+    _data = {"data": "An Error Occurred If You See This", "success": False}
     for server in API_INFO['Servers']:
         ServerMembers = bot.members(server.get('id'))
         for member in ServerMembers:
             #print(member['id'])
             if str(member['id']) == str(UserID):
-                info = bracelet_data(UserID=UserID)
+                data = bracelet_data(UserID=UserID)
             else:
-                if info == "An Error Occurred if you see this":
-                    info = jsonify({"data": "User is not monitored by Bracelet.", "success": False})
-                else:
-                    pass
-    return info
+                pass
+    if data == _data:
+         data = {"data": "User is not monitored by Bracelet", "success": False}
+    return jsonify(data)
 
 @app.route("/<file>", methods=["GET"])
 def serve_static(file):
@@ -181,5 +183,4 @@ def start_bot():
     bot.run()
 
 Thread(target=start_bot, daemon=True).start()
-
 app.run(host="0.0.0.0", port=PORT, debug=True)
