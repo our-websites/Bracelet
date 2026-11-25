@@ -1,4 +1,4 @@
-<img src="https://r2cdn.dstn.to/lanyard/logo.png" alt="Bracelet Logo" width="300"/>
+<img src="https://our-websites.github.io/cdn.shapes.lol/bracelet/logo.png" alt="Bracelet Logo" width="300"/>
 
 # 🏷️ Expose your Yapin' presence to a RESTful API in less than 10 seconds
 
@@ -24,7 +24,6 @@ Just [join this Yapin' server](https://www.yapin.gg/invite/bracelet) and your pr
 - [Quicklinks](#quicklinks)
 - [Self-host with PM2](#self-host-with-pm2)
 - [Showcase](#showcase)
-- [Todo](#todo)
 
 ## Community Projects
 
@@ -133,10 +132,9 @@ Where `id` is the Yapin' UserID you want the icon of. `file_type` can be one of:
 
 ## Self-host with PM2
 
-Build the Docker image by cloning this repo and running:
+Run Bracelet with PM2 by running:
 
 ```bash
-# The latest version is already on the docker hub, you can skip this step unless you would like to run a modified version.
 git clone https://github.com/our-websites/bracelet \
 cd bracelet \
 pm2 start
