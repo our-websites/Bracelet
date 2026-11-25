@@ -153,26 +153,29 @@ def SyncMembers():
     return "Failed To Sync Members."
 
 @bot.command("test", "Test Command Until We Actually Code This")
-def test(interaction):
-    interaction.reply("Test Worked!")
+def test(msg):
+    msg.ephemeral("Test Worked!")
 
-@bot.command("bracelet", "Get The Bracelet Info Of A User", options=[{"name": "user", "type": "user", "required": False}])
-def bracelet_command(interaction):
-    data = bracelet_data(UserID=interaction.options['user'])
+@bot.command("bracelet", "Get The Bracelet Info Of A User", options=[{"name": "user", "type": "user", "value": "self", "required": True}])
+def bracelet_command(msg):
+    print(msg.options)
+    #if msg.options['user'] == "self":
+        #msg.options['user'] = msg.author_id
+    data = bracelet_data(UserID=msg.options['user'])
     data = data['data'] # We don't need to pass in the WHOLE JSON table, I will eventually make this an embed dw. (If I ever learn how to make a nice looking embed.) Feel free to open a PR adding a embed.
-    interaction.reply(data)
+    msg.reply(data)
 
 @bot.command("set", "Coming Soon!")
-def set_kv(interaction):
-    interaction.ephemeral("W.I.P")
+def set_kv(msg):
+    msg.ephemeral("W.I.P")
 
 @bot.command("get", "Coming Soon!")
-def get_kv(interaction):
-    interaction.ephemeral("W.I.P")
+def get_kv(msg):
+    msg.ephemeral("W.I.P")
 
 @bot.command("apikey", "Coming Soon!")
-def generate_key(interaction):
-    interaction.ephemeral("W.I.P")
+def generate_key(msg):
+    msg.ephemeral("W.I.P")
 
 @app.route("/<subdomains>", methods=["GET"], subdomain="<subdomain>")
 @app.route("/", methods=["GET"], subdomain="<subdomain>")
