@@ -156,6 +156,12 @@ def SyncMembers():
 def test(interaction):
     interaction.reply("Test Worked!")
 
+@bot.command("bracelet", "Get The Bracelet Info Of A User", options=[{"name": "user", "type": "user", "required": True}])
+def bracelet_command(interaction):
+    data = bracelet_data(UserID=interaction.options['user'])
+    data = data['data'] # We don't need to pass in the WHOLE JSON table, I will eventually make this an embed dw. (If I ever learn how to make a nice looking embed.) Feel free to open a PR adding a embed.
+    interaction.reply(data)
+
 @bot.command("set", "Coming Soon!")
 def set_kv(interaction):
     interaction.ephemeral("W.I.P")
@@ -165,27 +171,35 @@ def get_kv(interaction):
     interaction.ephemeral("W.I.P")
 
 @bot.command("apikey", "Coming Soon!")
-def generate_kv_key(interaction):
+def generate_key(interaction):
     interaction.ephemeral("W.I.P")
 
 @app.route("/<subdomains>", methods=["GET"], subdomain="<subdomain>")
 @app.route("/", methods=["GET"], subdomain="<subdomain>")
 @app.errorhandler(404)
 def not_found(subdomain):
-    return redirect("https://bracelet.oriaxen.com")
+    if subdomain == "api":
+        return redirect(API_BASE_URL)
+    else:
+        return redirect(BASE_URL) # Redirect to the main landing page as they're not on the API at all
 
-@app.route("/", methods=["GET"])
-@app.route("/", methods=["GET"], subdomain="api")
+@app.route("/", methods=["GET", "HEAD"])
 def index():
+    return redirect(API_BASE_URL) # Will be making a landing page at some point, for now it's just a redirect!
+
+@app.route("/", methods=["GET", "HEAD"], subdomain="api")
+def api_index():
     API_RESPONSE = {"info": "Bracelet provides Yapin presences as an API. Find out more here: https://github.com/our-websites/bracelet","yapin_invite": VARS["INVITE_URL"],"monitored_user_count": API_INFO["Members"]}
     return jsonify({"data": API_RESPONSE, "success": True})
 
-@app.route("/api/v1/users/<UserID>", methods=["GET"]) # For local testing + people who don't want to or have access to use subdomains.
+
+
+@app.route("/api/v1/users/<UserID>", methods=["GET"]) # For local testing + people who don't want to use subdomains or don't have access to use subdomains.
 @app.route("/v1/users/<UserID>", methods=["GET"], subdomain="api")
 def bracelet_api(UserID):
     #print(bot.me)
     data = {"data": "An Error Occurred If You See This", "success": False}
-    _data = {"data": "An Error Occurred If You See This", "success": False}
+    _data = data
     for server in API_INFO['Servers']:
         ServerMembers = bot.members(server.get('id'))
         for member in ServerMembers:
@@ -209,4 +223,4 @@ def start_bot():
     bot.run()
 
 Thread(target=start_bot, daemon=True).start()
-app.run(host="0.0.0.0", port=PORT, debug=True)
+app.run(host="0.0.0.0", port=PORT, debug=False)
