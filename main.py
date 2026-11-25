@@ -142,7 +142,7 @@ def SyncMembers():
 @bot.command("test", "Test Command Until We Actually Code This")
 def test(interaction):
     interaction.reply("Test Worked!")
-
+@app.route("/<subdomains>", methods=["GET"], subdomain="<subdomain>")
 @app.route("/", methods=["GET"], subdomain="<subdomain>")
 @app.errorhandler(404)
 def not_found(subdomain):
@@ -154,8 +154,8 @@ def index():
     API_RESPONSE = {"info": "Bracelet provides Yapin presences as an API. Find out more here: https://github.com/our-websites/bracelet","yapin_invite": VARS["INVITE_URL"],"monitored_user_count": API_INFO["Members"]}
     return jsonify({"data": API_RESPONSE, "success": True})
 
-@app.route("/api/v1/<UserID>", methods=["GET"])
-@app.route("/v1/<UserID>", methods=["GET"], subdomain="api")
+@app.route("/api/v1/users/<UserID>", methods=["GET"]) # For local testing + people who don't want to or have access to use subdomains.
+@app.route("/v1/users/<UserID>", methods=["GET"], subdomain="api")
 def bracelet_api(UserID):
     #print(bot.me)
     data = {"data": "An Error Occurred If You See This", "success": False}
