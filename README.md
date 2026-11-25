@@ -1,6 +1,7 @@
 <img src="https://our-websites.github.io/cdn.shapes.lol/bracelet/logo.png" alt="Bracelet Logo" width="300"/>
 
 # 🏷️ Expose your Yapin' presence to a RESTful API in less than 10 seconds
+This project is heavily inspired by [**Lanyard**](https://github.com/phineas/lanyard)
 
 Bracelet is a service that makes it super easy to export your live Yapin' presence to an API endpoint (`api.bracelet.oriaxen.com/v1/users/:your_id`) (see below) for you to use wherever you want - for example, I use this to display what I'm listening to on Spotify on my personal website. It also acts as a globally-accessible realtime KV store which you can update from the Bracelet Yapin' bot or from the Bracelet API.
 
