@@ -3,13 +3,12 @@ from pathlib import Path
 from threading import Thread
 from dotenv import load_dotenv
 from yapper import telemetry
-#from cloudflare import Cloudflare
-from flask import Flask, render_template, jsonify, request, send_file, make_response, Response, redirect
+from flask import Flask, render_template, jsonify, request, send_file, redirect
 
 load_dotenv()
 
 class BraceletData:
-    status = "Offline",
+    status = "offline",
     user = {},
     kv = {}
 
@@ -66,6 +65,13 @@ BASE_URL_STRIPPED = BASE_URL_STRIPPED.replace("https://", "")
 API_BASE_URL = VARS["API_BASE_URL"]
 INVITE_URL = VARS["INVITE_URL"]
 PORT = VARS["SERVER_PORT"]
+KV = VARS["KV"] or False
+
+global kv_database
+
+if KV == True:
+    from cloudflare import Cloudflare
+    kv_client = Cloudflare(api_token=os.environ.get("CLOUDFLARE_API_TOKEN")) # No clue if we'll use D1 or KV from Cloudflare.
 
 app = Flask(__name__, subdomain_matching=True, template_folder=MAIN_DIR / "templates", static_folder=MAIN_DIR / "static")
 
@@ -100,22 +106,29 @@ def bracelet_data(UserID=None, Username=None):
     if Username:
         info = {"data": f'Not Implemented Yet ({Username})', "success": False}
     elif UserID:
-        info = format_data({"status": "Offline" ,"user": bot.user(UserID), "kv": {}})
+        info = pretty_format({"status": "offline" ,"user": bot.user(UserID), "kv": {}})
         #return jsonify({"data": f'Not Implemented Yet ({UserID})', "success": False})
     else:
         info = {"data": "No Data Found Or Provided.", "success": False}
     return info
 
-def format_data(Data: BraceletData):
-    formatted_data = {"data": Data, "success": True}
-    for badge in formatted_data['data']['user']['badges']:
+def bracelet_kv(UID):
+    return {}
+
+def pretty_format(data: BraceletData):
+    # (optional) Check if the user has KV data and add it to the table if there is KV data set.
+    data['user']['kv'] = bracelet_kv(data['user']['id']) if KV == True else {}
+    for badge in data['user']['badges']:
         if badge == ('bot' or 'verified_bot'):
-            print(f"{formatted_data['data']['user']['username']} Is A Bot", badge)
-            formatted_data['data']['user']['object'] = 'bot'
-    formatted_data['data']['user']['avatar_url'] = f"https://files.yapper.website/avatars/{formatted_data['data']['user']['avatar_path']}"
-    formatted_data['data']['user']['banner_url'] = f"https://files.yapper.website/banners/{formatted_data['data']['user']['banner_path']}"
+            data['user']['object'] = 'bot'
+    data['user']['avatar_url'] = f"https://files.yapper.website/avatars/{data['user']['avatar_path']}"
+    data['user']['banner_url'] = f"https://files.yapper.website/banners/{data['user']['banner_path']}"
+    # Format the data into a simple JSON response.
+    formatted_data = {"data": data, "success": True}
+    # Remove the avatar path and banner path keys from the JSON response as we give the full url paths.
     del formatted_data['data']['user']['avatar_path']
     del formatted_data['data']['user']['banner_path']
+    # Return the formatted JSON data to bracelet_data() so it can return it back to the API or the command that triggered it.
     return formatted_data
 
 def SyncServers():
@@ -142,6 +155,19 @@ def SyncMembers():
 @bot.command("test", "Test Command Until We Actually Code This")
 def test(interaction):
     interaction.reply("Test Worked!")
+
+@bot.command("set", "Coming Soon!")
+def set_kv(interaction):
+    interaction.ephemeral("W.I.P")
+
+@bot.command("get", "Coming Soon!")
+def get_kv(interaction):
+    interaction.ephemeral("W.I.P")
+
+@bot.command("apikey", "Coming Soon!")
+def generate_kv_key(interaction):
+    interaction.ephemeral("W.I.P")
+
 @app.route("/<subdomains>", methods=["GET"], subdomain="<subdomain>")
 @app.route("/", methods=["GET"], subdomain="<subdomain>")
 @app.errorhandler(404)
