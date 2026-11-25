@@ -86,7 +86,7 @@ The Bracelet KV is a a dynamic, real-time key->value store which is added to the
 > If you just want to display your Yapin' presence on a website or read it through the API, you do not need an API key.
 > You only need an API key to manage custom key/value data in your Bracelet KV store. Keep it private and never include it in frontend code.
 
-DM the Yapin' bot ([`Bracelet#5676`](https://www.yapin.gg/bot/BOT_ID_HERE)) with `/apikey` or use it in the [Server](https://www.yapin.gg/invite/bracelet) to get your API key.
+DM the Yapin' bot ([`Bracelet#9298`](https://www.yapin.gg/invite/bracelet)) with `/apikey` or use it in the [Server](https://www.yapin.gg/invite/bracelet) to get your API key.
 
 When making Bracelet KV API requests, set an `Authorization` header with the API key you received from the Bracelet bot as the value.
 
