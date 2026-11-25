@@ -156,7 +156,7 @@ def SyncMembers():
 def test(interaction):
     interaction.reply("Test Worked!")
 
-@bot.command("bracelet", "Get The Bracelet Info Of A User", options=[{"name": "user", "type": "user", "required": True}])
+@bot.command("bracelet", "Get The Bracelet Info Of A User", options=[{"name": "user", "type": "user", "required": False}])
 def bracelet_command(interaction):
     data = bracelet_data(UserID=interaction.options['user'])
     data = data['data'] # We don't need to pass in the WHOLE JSON table, I will eventually make this an embed dw. (If I ever learn how to make a nice looking embed.) Feel free to open a PR adding a embed.
